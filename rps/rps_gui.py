@@ -1,7 +1,9 @@
 import PySimpleGUI as sg
+import pandas as pd
 from rps.computer_engine import random_choice
 from rps.mechanics import determine_winner
 from rps.schemas import outcome_to_full_str
+from rps.blackboard import Blackboard
 
 
 def generate_window():
@@ -23,34 +25,29 @@ def generate_window():
                               [end_game]])
 
 
-def update_gui_tally(window, tally: list):
-    window['w'].update(tally[0])
-    window['d'].update(tally[1])
-    window['l'].update(tally[2])
-
-
-def update_tally(results, tally):
-    locs = dict(w=0, d=1, l=2)
-    tally[locs[results]] += 1
-    return tally
+def update_gui_tally(window, tally: pd.DataFrame):
+    window['w'].update(tally.iloc[0])
+    window['d'].update(tally.iloc[1])
+    window['l'].update(tally.iloc[2])
 
 
 if __name__ == '__main__':
+    bb = Blackboard()
     rsp_gui = generate_window()
     tally = [0, 0, 0]
     while True:
         event, values = rsp_gui.read()
-        update_gui_tally(rsp_gui, tally)
+        update_gui_tally(rsp_gui, bb.player_cumulative_results())
         if event == sg.WINDOW_CLOSED or event == 'Quit':
             break
-        elif event in ["Rock", "Paper", "Scissors"]:
+        else:
             descs = dict(Rock="brave", Scissors="cunning", Paper="noble")
             rsp_gui['Decision'].update(f"You selected {event}, a {descs[event]} choice")
             pc_choice = random_choice()
             player_choice = event
             outcome = determine_winner(player_choice, pc_choice)
-            tally = update_tally(outcome, tally)
-            update_gui_tally(rsp_gui, tally)
+            bb.record_result(outcome)
+            update_gui_tally(rsp_gui, bb.player_cumulative_results())
             rsp_gui['Computer'].update(f"The computer has selected {pc_choice}, how random.")
             rsp_gui['Result'].update(f"The results? {outcome_to_full_str[outcome]}")
     rsp_gui.close()
