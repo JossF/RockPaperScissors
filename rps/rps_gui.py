@@ -1,7 +1,6 @@
 import PySimpleGUI as sg
 import pandas as pd
-from rps.computer_engine import random_choice
-from rps.mechanics import determine_winner
+from rps.computer_engine import Computer
 from rps.schemas import outcome_to_full_str
 from rps.blackboard import Blackboard
 
@@ -33,6 +32,7 @@ def update_gui_tally(window, tally: pd.DataFrame):
 
 if __name__ == '__main__':
     bb = Blackboard()
+    pc = Computer(bb)
     rsp_gui = generate_window()
     tally = [0, 0, 0]
     while True:
@@ -43,10 +43,9 @@ if __name__ == '__main__':
         else:
             descs = dict(Rock="brave", Scissors="cunning", Paper="noble")
             rsp_gui['Decision'].update(f"You selected {event}, a {descs[event]} choice")
-            pc_choice = random_choice()
+            pc_choice = pc.make_choice()
             player_choice = event
-            outcome = determine_winner(player_choice, pc_choice)
-            bb.record_result(outcome)
+            outcome = bb.record_game(player_choice, pc_choice)
             update_gui_tally(rsp_gui, bb.player_cumulative_results())
             rsp_gui['Computer'].update(f"The computer has selected {pc_choice}, how random.")
             rsp_gui['Result'].update(f"The results? {outcome_to_full_str[outcome]}")
